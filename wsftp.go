@@ -15,6 +15,10 @@ var upgrader = websocket.Upgrader{
 	},
 }
 
+func sendResponse(conn *websocket.Conn, code int, response string) {
+	conn.WriteMessage(websocket.TextMessage, []byte(fmt.Sprintf("%d %s", code, response)))
+}
+
 func handleFTPConnection(w http.ResponseWriter, r *http.Request) {
 	conn, err := upgrader.Upgrade(w, r, nil)
 	if err != nil {
@@ -39,51 +43,51 @@ func handleFTPConnection(w http.ResponseWriter, r *http.Request) {
 func handleFTPCommand(conn *websocket.Conn, command string) {
 	// Implement command handling logic here
 	// A switch statement to handle different FTP commands
-	switch command {
-	case "USER username":
+	cmd := (strings.Split(command, " "))
+	switch cmd[0] /* The FTP command verb (analogous to HTTP's GET, POST) */ {
+	case "USER":
 		// Handle USER command for authentication
 		// Respond with 331 User name okay, need password.
 		// or 530 Not logged in as needed
-		conn.WriteMessage(websocket.TextMessage, []byte("331 User name okay, need password."))
-	case "PASS password":
+		sendResponse(conn, 331, "User name okay, need password.")
+	case "PASS":
 		// Handle PASS command for password verification
 		// Respond with 230 User logged in.
 		// or 530 Not logged in as needed
-		conn.WriteMessage(websocket.TextMessage, []byte("230 User logged in."))
-	case "CWD directory":
+		sendResponse(conn, 230, "User logged in.")
+	case "CWD":
 		// Handle CWD command to change working directory
 		// Respond as appropriate
-		conn.WriteMessage(websocket.TextMessage, []byte("250 Directory changed successfully."))
+		sendResponse(conn, 250, "Directory changed successfully.")
 	case "PWD":
 		// Handle PWD command to print working directory
 		// Respond with the current directory path
-		conn.WriteMessage(websocket.TextMessage, []byte("257 \"/current/directory/path\""))
+		sendResponse(conn, 257, "/current/directory/path")
 	case "LIST":
 		// Handle LIST command for directory listing
 		// Respond with the directory listing data
-		conn.WriteMessage(websocket.TextMessage, []byte("150 Opening data connection for directory listing."))
+		sendResponse(conn, 150, "Opening data connection for directory listing.")
 		// Implement data channel logic to send directory listing
 		// Respond with "226 Directory listing completed." when done
-	case "RETR filename":
+	case "RETR":
 		// Handle RETR command for file retrieval
 		// Respond with "150 Opening data connection for file retrieval."
 		// Implement data channel logic to send the file
 		// Respond with "226 Transfer complete." when done
-	case "STOR filename":
+	case "STOR":
 		// Handle STOR command for file upload
 		// Respond with "150 Opening data connection for file upload."
 		// Implement data channel logic to receive and store the file
 		// Respond with "226 Transfer complete." when done
 	case "QUIT":
 		// Handle QUIT command to disconnect
-		conn.WriteMessage(websocket.TextMessage, []byte("221 Goodbye!"))
+		sendResponse(conn, 221, "Goodbye!")
 		conn.Close()
 	default:
 		// Handle unknown commands or send a "502 Command not implemented" response
-		conn.WriteMessage(websocket.TextMessage, []byte("502 Command not implemented."))
+		sendResponse(conn, 502, "Command not implemented.")
 	}
 }
-
 func main() {
 	http.HandleFunc("/ftp", handleFTPConnection)
 	fmt.Println("FTP server is running on port 8080...")
