@@ -72,7 +72,7 @@ func handleFTPCommand(conn *websocket.Conn, command string) {
 }
 
 func main() {
-	http.HandleFunc("/ftp", handleFTPConnection)
+	http.HandleFunc("/", handleFTPConnection)
 	fmt.Println("FTP server is running on port 8080...")
 	log.Fatal(http.ListenAndServe(":8080", nil))
 }
